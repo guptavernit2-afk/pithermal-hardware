@@ -4,7 +4,7 @@
 
 PiThermal will turn a Raspberry Pi and a DS18B20 digital thermometer into a live temperature monitor. During the demo, someone can warm the probe and watch its reading rise in the terminal. When the reading crosses the chosen limit, the monitor will display a warning. The team will use this to explain how a Linux application gets information from a physical device.
 
-**Current stage — Phase 2 live monitor ready for review.** The reader and terminal monitor passed their laptop tests. Physical wiring and readings are pending lab access. The companion simulation is planned for a separate repository, `pithermal-sim`.
+**Current stage — Phase 3 laptop demo ready for review.** You can run the real terminal monitor with controlled sensor readings on a laptop. Physical wiring and readings are pending lab access. The companion circuit simulation is planned for a separate repository, `pithermal-sim`.
 
 [Lab checklist](#lab-checklist) · [How Linux reads the sensor](#how-linux-reads-the-sensor) · [Demo and tests](#demo-and-tests) · [Team milestones](#team-milestones)
 
@@ -71,6 +71,28 @@ References: [Linux thermometer driver](https://docs.kernel.org/w1/slaves/w1_ther
 
 ## Demo and tests
 
+### Run the laptop demo from a fresh checkout
+
+Use Git and Python 3.8 or later. Run these commands from the parent folder where you want the checkout. If your system names Python 3 `python3`, use that command in place of `python`.
+
+```sh
+git clone https://github.com/guptavernit2-afk/pithermal-hardware.git
+cd pithermal-hardware
+python -B -m unittest discover -s tests -v
+python -B -X utf8 tests/test_monitor_e2e.py
+```
+
+The first Python command runs the full suite. The second runs the end-to-end checks again and prints the monitor's live output. It starts `python -m src.monitor` with a temporary device directory, a **28°C threshold**, and a **0.2-second interval**. The test changes the input files automatically, checks the output and stops the process. There are no packages to install or readings to type.
+
+| Input in the demo | What you should see |
+| --- | --- |
+| 27°C, then exactly 28°C | Both timestamped readings show `NORMAL`. |
+| 28.001°C, then 27.5°C | First `WARNING`, then `NORMAL`. |
+| Temperature file removed | `SENSOR ERROR` with the missing file's path. |
+| File restored with 26.5°C | A fresh `26.500 °C  NORMAL` line in the same process. |
+
+Expect **13 passing tests** in the full suite and **2 passing checks** in the demo. The second check verifies that an interval of zero exits with a usage error. If Python reports it cannot find `src.monitor`, run the command from the folder containing this README. If a manual run on your laptop reports a missing 1-Wire directory, use the demo command above. The plain monitor command defaults to the Pi's device directory.
+
 ### Phase 1 laptop verification
 
 From the repository root, run the following with Python 3. The tests create and clean up their own temporary device directories. They require only the Python standard library.
@@ -115,8 +137,8 @@ The Phase 1 reader lives in `src/`, and its laptop tests live in `tests/`. Keep 
 | Stage | Work and handoff | Status |
 | --- | --- | --- |
 | 1. Read one temperature | Discover one DS18B20, read its temperature and verify conversion and error handling. | Reviewed |
-| 2. Build live monitor | Run the sampling loop, warning logic and terminal output. | Laptop tests passed; ready for review |
-| 3. Test on laptop | Test lead exercises conversion, boundaries, recovery and read failures using controlled inputs. Document the launch command and results. | Planned |
+| 2. Build live monitor | Run the sampling loop, warning logic and terminal output. | Reviewed |
+| 3. Test on laptop | Run the documented demo from a fresh checkout and verify warning, cooling and recovery through the real terminal command. | Ready for review |
 | 4. Integrate on Pi | Hardware lead confirms pinout, enables 1-Wire, verifies a raw reading and runs the same application. Team records and fixes any integration issues. | Awaiting hardware |
 | 5. Demonstrate and report | Team rehearses the live demo, collects evidence and completes the report. | Planned |
 
