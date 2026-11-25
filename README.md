@@ -4,7 +4,7 @@
 
 PiThermal will turn a Raspberry Pi and a DS18B20 digital thermometer into a live temperature monitor. During the demo, someone can warm the probe and watch its reading rise in the terminal. When the reading crosses the chosen limit, the monitor will display a warning. The team will use this to explain how a Linux application gets information from a physical device.
 
-**Current stage — Phase 1 sensor reader ready for review.** The reader passed its laptop tests. Physical wiring and readings are pending lab access. The live monitor is planned for Phase 2. The companion simulation is planned for a separate repository, `pithermal-sim`.
+**Current stage — Phase 2 live monitor ready for review.** The reader and terminal monitor passed their laptop tests. Physical wiring and readings are pending lab access. The companion simulation is planned for a separate repository, `pithermal-sim`.
 
 [Lab checklist](#lab-checklist) · [How Linux reads the sensor](#how-linux-reads-the-sensor) · [Demo and tests](#demo-and-tests) · [Team milestones](#team-milestones)
 
@@ -20,13 +20,13 @@ The assignment asks for regular temperature readings from a suitable sensor, a d
 | Sensor error | Display `SENSOR ERROR` when a reading is missing or invalid. Retry on the next interval. Only display a temperature from a successful read. |
 | Operation | Show the active threshold and interval at startup. Keep monitoring until the operator presses Ctrl+C. |
 
-Example of the **planned** terminal display with a 30°C threshold:
+Example terminal display with a 30°C threshold:
 
 ```text
-10:15:00   27.50 °C   NORMAL
-10:15:02   30.00 °C   NORMAL
-10:15:04   31.25 °C   WARNING
-10:15:06   29.75 °C   NORMAL
+10:15:00  27.500 °C  NORMAL
+10:15:02  30.000 °C  NORMAL
+10:15:04  31.250 °C  WARNING
+10:15:06  29.750 °C  NORMAL
 ```
 
 ## Lab checklist
@@ -67,7 +67,7 @@ References: [Linux thermometer driver](https://docs.kernel.org/w1/slaves/w1_ther
 2. With the Pi powered down, connect sensor power to 3.3 V, ground to ground, and data to the selected 1-Wire pin (proposed BCM GPIO4). Include the pull-up from data to 3.3 V if needed. Record the final pin mapping and a wiring photo in `docs/`.
 3. Boot Raspberry Pi OS, enable 1-Wire in `raspi-config` and reboot. Run `ls /sys/bus/w1/devices/` and look for the DS18B20 entry beginning with `28-`.
 4. With one probe connected, try `cat /sys/bus/w1/devices/28-*/temperature` to check one reading independently of our program. If the device is missing, check interface configuration and wiring. If the directory exists but that attribute is unavailable, inspect the driver's `w1_slave` output and record what the lab image provides.
-5. Once the application exists, add its verified launch command here. Check the displayed threshold, sampling interval and first live reading before starting the demo.
+5. From the repository root on the Pi, run `python3 -m src.monitor`. The defaults are a 30°C threshold and a two-second interval. Override them with, for example, `python3 -m src.monitor --threshold 28 --interval 1`. Press Ctrl+C to stop.
 
 ## Demo and tests
 
@@ -84,6 +84,8 @@ python -B -m unittest discover -s tests -v
 The [sensor reader](src/sensor_reader.py) exposes `read_temperature_c()`. With one connected probe it returns a temperature in °C. If the reading is unavailable, invalid or ambiguous, it raises `SensorReadError`. Production calls use Linux's device directory by default. The [tests](tests/test_sensor_reader.py) pass a temporary directory as the `devices_dir` argument.
 
 ### Monitor and bench test plan
+
+**Phase 2 laptop results.** All 11 reader and monitor tests passed. A separate Windows run launched the monitor with `--devices-dir` pointing to a temporary 1-Wire directory and `--interval 0.25`. At a 30°C threshold, the sequence 29 → 30 → 31 → 29°C printed NORMAL → NORMAL → WARNING → NORMAL. Removing the temperature file produced SENSOR ERROR. Restoring it with 27500 millidegrees produced 27.500°C and NORMAL on the next sample in the same process.
 
 | Check | How we will test | Expected result |
 | --- | --- | --- |
@@ -112,8 +114,8 @@ The Phase 1 reader lives in `src/`, and its laptop tests live in `tests/`. Keep 
 
 | Stage | Work and handoff | Status |
 | --- | --- | --- |
-| 1. Read one temperature | Discover one DS18B20, read its temperature and verify conversion and error handling. | Laptop tests passed; ready for review |
-| 2. Build live monitor | Add the sampling loop, warning logic and terminal output after Phase 1 review. | Planned |
+| 1. Read one temperature | Discover one DS18B20, read its temperature and verify conversion and error handling. | Reviewed |
+| 2. Build live monitor | Run the sampling loop, warning logic and terminal output. | Laptop tests passed; ready for review |
 | 3. Test on laptop | Test lead exercises conversion, boundaries, recovery and read failures using controlled inputs. Document the launch command and results. | Planned |
 | 4. Integrate on Pi | Hardware lead confirms pinout, enables 1-Wire, verifies a raw reading and runs the same application. Team records and fixes any integration issues. | Awaiting hardware |
 | 5. Demonstrate and report | Team rehearses the live demo, collects evidence and completes the report. | Planned |
