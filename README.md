@@ -4,7 +4,7 @@
 
 PiThermal will turn a Raspberry Pi and a DS18B20 digital thermometer into a live temperature monitor. During the demo, someone can warm the probe and watch its reading rise in the terminal. When the reading crosses the chosen limit, the monitor will display a warning. The team will use this to explain how a Linux application gets information from a physical device.
 
-**Current stage — README under team review.** Hardware availability, implementation and test results are pending. This repository covers the physical build. The companion simulation is planned for a separate repository, `pithermal-sim`.
+**Current stage — Phase 1 sensor reader ready for review.** The reader passed its laptop tests. Physical wiring and readings are pending lab access. The live monitor is planned for Phase 2. The companion simulation is planned for a separate repository, `pithermal-sim`.
 
 [Lab checklist](#lab-checklist) · [How Linux reads the sensor](#how-linux-reads-the-sensor) · [Demo and tests](#demo-and-tests) · [Team milestones](#team-milestones)
 
@@ -57,7 +57,7 @@ DS18B20 → GPIO data pin → Linux 1-Wire drivers → sensor file → Python mo
 
 The DS18B20 sends digital readings over its 1-Wire data connection. The Linux kernel manages that connection and its thermometer driver makes the measurement readable through **sysfs**, a filesystem that exposes device information to programs. Our Python program can open the sensor file in user space, read the value, convert it to °C and decide which status to display.
 
-For example, the driver's `temperature` file represents 26.5°C as `26500` millidegrees. Each sensor has its own identifier. The planned reader will discover the device under `/sys/bus/w1/devices/` instead of assuming our lab probe has a particular ID.
+For example, the driver's `temperature` file represents 26.5°C as `26500` millidegrees. Each sensor has its own identifier. The reader discovers the device under `/sys/bus/w1/devices/` each time it reads.
 
 References: [Linux thermometer driver](https://docs.kernel.org/w1/slaves/w1_therm.html) · [Raspberry Pi configuration guide](https://www.raspberrypi.com/documentation/computers/configuration.html#enable-or-disable-the-one-wire-interface)
 
@@ -70,6 +70,20 @@ References: [Linux thermometer driver](https://docs.kernel.org/w1/slaves/w1_ther
 5. Once the application exists, add its verified launch command here. Check the displayed threshold, sampling interval and first live reading before starting the demo.
 
 ## Demo and tests
+
+### Phase 1 laptop verification
+
+From the repository root, run the following with Python 3. The tests create and clean up their own temporary device directories. They require only the Python standard library.
+
+```sh
+python -B -m unittest discover -s tests -v
+```
+
+**Observed on Windows with Python 3.13.6:** all eight tests passed. Controlled inputs covered positive, zero and negative readings, the sensor's range limits, discovery among unrelated devices, multiple probes, missing files, invalid data and a fresh read after recovery from an error.
+
+The [sensor reader](src/sensor_reader.py) exposes `read_temperature_c()`. With one connected probe it returns a temperature in °C. If the reading is unavailable, invalid or ambiguous, it raises `SensorReadError`. Production calls use Linux's device directory by default. The [tests](tests/test_sensor_reader.py) pass a temporary directory as the `devices_dir` argument.
+
+### Monitor and bench test plan
 
 | Check | How we will test | Expected result |
 | --- | --- | --- |
@@ -92,14 +106,14 @@ tests/      Repeatable software tests using controlled sensor inputs
 docs/       Confirmed wiring, bench evidence and final report
 ```
 
-The three directories are reserved for the next stages. Keep setup and operating instructions in this README so teammates have one starting point.
+The Phase 1 reader lives in `src/`, and its laptop tests live in `tests/`. Keep setup and operating instructions in this README so teammates have one starting point.
 
 ## Team milestones
 
 | Stage | Work and handoff | Status |
 | --- | --- | --- |
-| 1. Review | Team reviews scope and README. Ask the professor about equipment and alert expectations. | In review |
-| 2. Implement after review | Software lead builds sensor discovery, reading, status logic and terminal output. A teammate reviews it. | Planned |
+| 1. Read one temperature | Discover one DS18B20, read its temperature and verify conversion and error handling. | Laptop tests passed; ready for review |
+| 2. Build live monitor | Add the sampling loop, warning logic and terminal output after Phase 1 review. | Planned |
 | 3. Test on laptop | Test lead exercises conversion, boundaries, recovery and read failures using controlled inputs. Document the launch command and results. | Planned |
 | 4. Integrate on Pi | Hardware lead confirms pinout, enables 1-Wire, verifies a raw reading and runs the same application. Team records and fixes any integration issues. | Awaiting hardware |
 | 5. Demonstrate and report | Team rehearses the live demo, collects evidence and completes the report. | Planned |
