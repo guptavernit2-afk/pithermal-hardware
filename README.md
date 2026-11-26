@@ -2,17 +2,17 @@
 
 **Operating Systems (1BCS304) · CCA project 13 · Hardware prototype**
 
-PiThermal will turn a Raspberry Pi and a DS18B20 digital thermometer into a live temperature monitor. During the demo, someone can warm the probe and watch its reading rise in the terminal. When the reading crosses the chosen limit, the monitor will display a warning. The team will use this to explain how a Linux application gets information from a physical device.
+PiThermal is designed around a Raspberry Pi and a DS18B20 digital thermometer to demonstrate how a Linux application receives a sensor reading. The Python monitor prints timestamped temperatures and warns when a reading exceeds the configured threshold.
 
-**Current stage — Phase 3 laptop demo ready for review.** You can run the real terminal monitor with controlled sensor readings on a laptop. Physical wiring and readings are pending lab access. The companion circuit simulation is planned for a separate repository, `pithermal-sim`.
+**The monitor has been verified with simulated sensor readings.** You can run the terminal demo on a laptop or try the same Python monitor through the hosted circuit simulator. The physical Pi and DS18B20 bench test is pending. [Open the live simulator](https://pithermal-simulation.onrender.com/) · [Companion simulation repository](https://github.com/guptavernit2-afk/pithermal-simulation)
 
-[Lab checklist](#lab-checklist) · [How Linux reads the sensor](#how-linux-reads-the-sensor) · [Demo and tests](#demo-and-tests) · [Team milestones](#team-milestones)
+[Laptop demo and tests](#demo-and-tests) · [Lab checklist](#lab-checklist) · [How Linux reads the sensor](#how-linux-reads-the-sensor)
 
-## What we plan to build
+## What the monitor does
 
-The assignment asks for regular temperature readings from a suitable sensor, a display of those readings, and an alert when the temperature exceeds a predefined threshold. Our proposed design uses one external sensor, a Python 3 program and a terminal display. The sensor measures the temperature at the probe.
+The assignment asks for regular temperature readings from a suitable sensor, a display of those readings, and an alert when the temperature exceeds a predefined threshold. The monitor is designed for one DS18B20 and displays its reading in a terminal.
 
-| Decision | Proposed behavior |
+| Feature | Behavior |
 | --- | --- |
 | Sampling | Take a reading about every two seconds. Display the time, temperature in °C and status on each update. |
 | Warning | Start with a configurable 30°C demo threshold. Compare the measured value before rounding it for display. Exactly 30°C is normal. |
@@ -64,7 +64,7 @@ References: [Linux thermometer driver](https://docs.kernel.org/w1/slaves/w1_ther
 ## Planned setup and first run
 
 1. Identify the board and sensor variant. Verify the sensor pinout against its part or module documentation before applying power. Probe wire colours can vary.
-2. With the Pi powered down, connect sensor power to 3.3 V, ground to ground, and data to the selected 1-Wire pin (proposed BCM GPIO4). Include the pull-up from data to 3.3 V if needed. Record the final pin mapping and a wiring photo in `docs/`.
+2. With the Pi powered down, connect sensor power to 3.3 V, ground to ground, and data to the selected 1-Wire pin (BCM GPIO4 in our design). Include a 4.7 kΩ pull-up from data to 3.3 V if the sensor module does not already have one. Record the final pin mapping and a wiring photo. [Circuit wiring reference](https://github.com/guptavernit2-afk/pithermal-simulation#circuit-wiring)
 3. Boot Raspberry Pi OS, enable 1-Wire in `raspi-config` and reboot. Run `ls /sys/bus/w1/devices/` and look for the DS18B20 entry beginning with `28-`.
 4. With one probe connected, try `cat /sys/bus/w1/devices/28-*/temperature` to check one reading independently of our program. If the device is missing, check interface configuration and wiring. If the directory exists but that attribute is unavailable, inspect the driver's `w1_slave` output and record what the lab image provides.
 5. From the repository root on the Pi, run `python3 -m src.monitor`. The defaults are a 30°C threshold and a two-second interval. Override them with, for example, `python3 -m src.monitor --threshold 28 --interval 1`. Press Ctrl+C to stop.
@@ -127,10 +127,9 @@ For each test, record the input or bench setup, expected result, observed result
 README.md   Project brief, equipment checklist, setup, team plan and test criteria
 src/        Python sensor reader, monitoring loop and terminal output
 tests/      Repeatable software tests using controlled sensor inputs
-docs/       Confirmed wiring, bench evidence and final report
 ```
 
-The Phase 1 reader lives in `src/`, and its laptop tests live in `tests/`. Keep setup and operating instructions in this README so teammates have one starting point.
+The [sensor reader](src/sensor_reader.py) and [terminal monitor](src/monitor.py) are separate modules. The [end-to-end test](tests/test_monitor_e2e.py) runs the monitor as a separate process and checks its printed output.
 
 ## Team milestones
 
@@ -138,9 +137,9 @@ The Phase 1 reader lives in `src/`, and its laptop tests live in `tests/`. Keep 
 | --- | --- | --- |
 | 1. Read one temperature | Discover one DS18B20, read its temperature and verify conversion and error handling. | Reviewed |
 | 2. Build live monitor | Run the sampling loop, warning logic and terminal output. | Reviewed |
-| 3. Test on laptop | Run the documented demo from a fresh checkout and verify warning, cooling and recovery through the real terminal command. | Ready for review |
+| 3. Test on laptop | Run the documented demo from a fresh checkout and verify warning, cooling and recovery through the real terminal command. | Verified |
 | 4. Integrate on Pi | Hardware lead confirms pinout, enables 1-Wire, verifies a raw reading and runs the same application. Team records and fixes any integration issues. | Awaiting hardware |
-| 5. Demonstrate and report | Team rehearses the live demo, collects evidence and completes the report. | Planned |
+| 5. Demonstrate and report | Publish the live simulation and document the circuit, observed results and bench test still to do. | Simulator live and report prepared |
 
 Assign a teammate to each milestone once roles are agreed. Use a GitHub issue for each task with an owner and an expected result. Link the change or test evidence when closing the issue. Everyone should be able to explain one reading from the probe to the terminal.
 
@@ -153,4 +152,4 @@ Assign a teammate to each milestone once roles are agreed. Use a GitHub issue fo
 | Teamwork | 5 | Contributions, reviews, joint integration and rehearsal. |
 | Report | 5 | Clear objective, hardware list, wiring diagram, software design, test results, limitations, contributions and conclusion. |
 
-**Total: 20 marks.** Record observations as work happens. Use the final report to explain what the team built, how it behaved on the bench and which design decisions changed during integration.
+**Total: 20 marks.** The report records the simulator results. Add the measured readings and wiring evidence when the physical bench test is complete.
